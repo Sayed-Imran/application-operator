@@ -29,6 +29,7 @@ type ApplicationSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	Image    string `json:"image"`
 	Replicas int32  `json:"replicas"`
+	Port	 int32  `json:"port"`
 }
 
 // ApplicationStatus defines the observed state of Application
