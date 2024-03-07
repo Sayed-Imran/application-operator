@@ -19,6 +19,9 @@ package controllers
 import (
 	"context"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,6 +29,8 @@ import (
 
 	apiv1alpha1 "github.com/Sayed-Imran/application-operator/api/v1alpha1"
 )
+
+var logger = log.Log.WithName("controller_application")
 
 // ApplicationReconciler reconciles a Application object
 type ApplicationReconciler struct {
@@ -49,7 +54,8 @@ type ApplicationReconciler struct {
 func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	log := logger.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
+	log.Info("Reconciling Application")
 
 	return ctrl.Result{}, nil
 }
@@ -59,4 +65,38 @@ func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&apiv1alpha1.Application{}).
 		Complete(r)
+}
+
+func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
+
+	dep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      app.Name,
+			Namespace: app.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &app.Spec.Replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": app.Name},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": app.Name},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  app.Name,
+							Image: app.Spec.Image,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := r.Create(ctx, dep); err != nil {
+		log.Log.Error(err, "unable to create Deployment for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
+	}
+
 }
