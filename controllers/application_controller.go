@@ -105,3 +105,27 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ct
 	}
 
 }
+
+func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
+
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      app.Name,
+			Namespace: app.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{"app": app.Name},
+			Ports: []corev1.ServicePort{
+				{
+					Port: app.Spec.Port,
+				},
+			},
+		},
+	}
+
+	if err := r.Create(ctx, service); err != nil {
+		log.Log.Error(err, "unable to create Service for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
+	}
+
+}
+
