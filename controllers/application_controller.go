@@ -69,7 +69,7 @@ func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
 
-	dep := &appsv1.Deployment{
+	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      app.Name,
 			Namespace: app.Namespace,
@@ -88,6 +88,11 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ct
 						{
 							Name:  app.Name,
 							Image: app.Spec.Image,
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: app.Spec.Port,
+								},
+							},
 						},
 					},
 				},
@@ -95,7 +100,7 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ct
 		},
 	}
 
-	if err := r.Create(ctx, dep); err != nil {
+	if err := r.Create(ctx, deployment); err != nil {
 		log.Log.Error(err, "unable to create Deployment for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
 	}
 
