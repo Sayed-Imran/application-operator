@@ -22,6 +22,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -70,44 +71,55 @@ func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
+	deployment := &appsv1.Deployment{}
+	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, deployment)
 
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      app.Name,
-			Namespace: app.Namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &app.Spec.Replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": app.Name},
-			},
-			Template: corev1.PodTemplateSpec{
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Deployment not found, creating a new one
+			deployment = &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": app.Name},
+					Name:      app.Name,
+					Namespace: app.Namespace,
 				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  app.Name,
-							Image: app.Spec.Image,
-							Ports: []corev1.ContainerPort{
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &app.Spec.Replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"app": app.Name},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{"app": app.Name},
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
 								{
-									ContainerPort: app.Spec.Port,
+									Name:  app.Name,
+									Image: app.Spec.Image,
+									Ports: []corev1.ContainerPort{
+										{
+											ContainerPort: app.Spec.Port,
+										},
+									},
 								},
 							},
 						},
 					},
 				},
-			},
-		},
-	}
+			}
 
-	if err := r.Create(ctx, deployment); err != nil {
-		log.Log.Error(err, "unable to create Deployment for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
+			if err := r.Create(ctx, deployment); err != nil {
+				log.Log.Error(err, "unable to create Deployment for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
+			}
+		} else {
+			// Error occurred during getting the Deployment
+			log.Log.Error(err, "unable to get Deployment", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
+		}
+	} else {
+		// Deployment already exists, do nothing
+		log.Log.Info("Deployment already exists", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
 	}
-
 }
-
 func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
 
 	service := &corev1.Service{
@@ -132,4 +144,3 @@ func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx c
 	}
 
 }
-
