@@ -18,11 +18,13 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -57,7 +59,7 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	log := logger.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	log.Info("Reconciling Application")
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -117,7 +119,9 @@ func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx c
 			Selector: map[string]string{"app": app.Name},
 			Ports: []corev1.ServicePort{
 				{
-					Port: app.Spec.Port,
+					Port:       app.Spec.Port,
+					Protocol:   corev1.ProtocolTCP,
+					TargetPort: intstr.FromInt(int(app.Spec.Port)),
 				},
 			},
 		},
