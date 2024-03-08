@@ -59,6 +59,8 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	log := logger.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	log.Info("Reconciling Application")
+	createDeployment(&apiv1alpha1.Application{}, r, ctx)
+	createService(&apiv1alpha1.Application{}, r, ctx)
 
 	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
 }
