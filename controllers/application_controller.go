@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -59,9 +60,20 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	log := logger.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	log.Info("Reconciling Application")
-	createDeployment(&apiv1alpha1.Application{}, r, ctx)
-	createService(&apiv1alpha1.Application{}, r, ctx)
+	app := &apiv1alpha1.Application{}
+	err := r.Get(ctx, req.NamespacedName, app)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("Application resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "Failed to get Application")
+		return ctrl.Result{}, err
+	}
 
+	// Create Deployment
+	createDeployment(app, r, req, ctx)
+	createService(app, r, req, ctx)
 	return ctrl.Result{RequeueAfter: time.Duration(5 * time.Second)}, nil
 }
 
@@ -72,31 +84,32 @@ func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
+func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, req ctrl.Request, ctx context.Context) {
 	deployment := &appsv1.Deployment{}
-	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, deployment)
+	err := r.Get(ctx, client.ObjectKey{Name: req.Name, Namespace: req.Namespace}, deployment)
 
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Deployment not found, creating a new one
+			fmt.Println("Creating Deployment for Application", app.Spec)
 			deployment = &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      app.Name,
-					Namespace: app.Namespace,
+					Name:      req.Name,
+					Namespace: req.Namespace,
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &app.Spec.Replicas,
 					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{"app": app.Name},
+						MatchLabels: map[string]string{"app": req.Name},
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{"app": app.Name},
+							Labels: map[string]string{"app": req.Name},
 						},
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
 								{
-									Name:  app.Name,
+									Name:  req.Name,
 									Image: app.Spec.Image,
 									Ports: []corev1.ContainerPort{
 										{
@@ -111,30 +124,30 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ct
 			}
 
 			if err := r.Create(ctx, deployment); err != nil {
-				log.Log.Error(err, "unable to create Deployment for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
+				log.Log.Error(err, "unable to create Deployment for Application", "Application.Namespace", req.Namespace, "Application.Name", req.Name)
 			}
 		} else {
 			// Error occurred during getting the Deployment
-			log.Log.Error(err, "unable to get Deployment", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
+			log.Log.Error(err, "unable to get Deployment", "Deployment.Namespace", req.Namespace, "Deployment.Name", req.Name)
 		}
 	} else {
 		// Deployment already exists, do nothing
-		log.Log.Info("Deployment already exists", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
+		log.Log.Info("Deployment already exists", "Deployment.Namespace", req.Namespace, "Deployment.Name", req.Name)
 	}
 }
-func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
+func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, req ctrl.Request, ctx context.Context) {
 	service := &corev1.Service{}
-	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, service)
+	err := r.Get(ctx, client.ObjectKey{Name: req.Name, Namespace: req.Namespace}, service)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Service not found, creating a new one
 			service := &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      app.Name,
-					Namespace: app.Namespace,
+					Name:      req.Name,
+					Namespace: req.Namespace,
 				},
 				Spec: corev1.ServiceSpec{
-					Selector: map[string]string{"app": app.Name},
+					Selector: map[string]string{"app": req.Name},
 					Ports: []corev1.ServicePort{
 						{
 							Port:       app.Spec.Port,
@@ -146,7 +159,7 @@ func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx c
 			}
 
 			if err := r.Create(ctx, service); err != nil {
-				log.Log.Error(err, "unable to create Service for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
+				log.Log.Error(err, "unable to create Service for Application", "Application.Namespace", req.Namespace, "Application.Name", req.Name)
 			}
 		}
 	}
@@ -191,4 +204,3 @@ func deleteService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx c
 		}
 	}
 }
-
