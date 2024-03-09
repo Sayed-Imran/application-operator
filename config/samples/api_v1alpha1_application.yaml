@@ -9,4 +9,6 @@ metadata:
     app.kubernetes.io/created-by: application-operator
   name: application-sample
 spec:
-  # TODO(user): Add fields here
+  replicas: 2
+  image: sayedimran/fastapi-sample-app:v4
+  port: 7000
