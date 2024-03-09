@@ -12,6 +12,8 @@ spec:
     listKind: ApplicationList
     plural: applications
     singular: application
+    shortNames:
+    - app
   scope: Namespaced
   versions:
   - name: v1alpha1
