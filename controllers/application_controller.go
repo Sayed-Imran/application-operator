@@ -96,6 +96,9 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, re
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      req.Name,
 					Namespace: req.Namespace,
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(app, apiv1alpha1.GroupVersion.WithKind("Application")),
+					},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &app.Spec.Replicas,
@@ -145,6 +148,9 @@ func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, req c
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      req.Name,
 					Namespace: req.Namespace,
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(app, apiv1alpha1.GroupVersion.WithKind("Application")),
+					},
 				},
 				Spec: corev1.ServiceSpec{
 					Selector: map[string]string{"app": req.Name},
