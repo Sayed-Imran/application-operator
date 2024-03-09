@@ -170,4 +170,3 @@ func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, req c
 		}
 	}
 }
-
