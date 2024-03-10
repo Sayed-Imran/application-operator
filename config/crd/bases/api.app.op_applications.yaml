@@ -156,7 +156,6 @@ spec:
                 format: int32
                 type: integer
             required:
-            - env
             - image
             - port
             - replicas

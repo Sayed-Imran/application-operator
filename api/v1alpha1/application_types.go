@@ -31,7 +31,7 @@ type ApplicationSpec struct {
 	Image    string          `json:"image"`
 	Replicas int32           `json:"replicas"`
 	Port     int32           `json:"port"`
-	Env      []corev1.EnvVar `json:"env"`
+	Env      []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // ApplicationStatus defines the observed state of Application
