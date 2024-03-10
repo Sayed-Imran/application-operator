@@ -119,6 +119,7 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ct
 											ContainerPort: app.Spec.Port,
 										},
 									},
+									Env: app.Spec.Env,
 								},
 							},
 						},
