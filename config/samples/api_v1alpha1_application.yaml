@@ -12,3 +12,8 @@ spec:
   replicas: 2
   image: sayedimran/fastapi-sample-app:v4
   port: 7000
+  env:
+  - name: APP_ENV
+    value: production
+  - name: APP_NAME
+    value: fastapi-sample-app
