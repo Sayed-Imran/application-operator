@@ -38,12 +38,16 @@ type ApplicationSpec struct {
 type ApplicationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Image    string `json:"image"`
+	Replicas int32  `json:"replicas"`
+	Port     int32  `json:"port"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
 // Application is the Schema for the applications API
+// +kubebuilder:resource:path=applications,shortName=app
 type Application struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
