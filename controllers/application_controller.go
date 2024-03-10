@@ -72,8 +72,8 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// Create Deployment
-	createDeployment(app, r, req, ctx)
-	createService(app, r, req, ctx)
+	createDeployment(app, r, ctx)
+	createService(app, r, ctx)
 	return ctrl.Result{RequeueAfter: time.Duration(5 * time.Second)}, nil
 }
 
@@ -84,7 +84,7 @@ func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, req ctrl.Request, ctx context.Context) {
+func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
 	deployment := &appsv1.Deployment{}
 	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, deployment)
 
@@ -138,7 +138,7 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, re
 		log.Log.Info("Deployment already exists", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
 	}
 }
-func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, req ctrl.Request, ctx context.Context) {
+func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
 	service := &corev1.Service{}
 	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, service)
 	if err != nil {
