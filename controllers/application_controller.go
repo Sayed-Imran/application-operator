@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -91,7 +90,6 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ct
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Deployment not found, creating a new one
-			fmt.Println("Creating Deployment for Application", app.Spec)
 			deployment = &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      app.Name,
