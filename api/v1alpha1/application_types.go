@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -27,9 +28,10 @@ import (
 type ApplicationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Image    string `json:"image"`
-	Replicas int32  `json:"replicas"`
-	Port     int32  `json:"port"`
+	Image    string          `json:"image"`
+	Replicas int32           `json:"replicas"`
+	Port     int32           `json:"port"`
+	Env      []corev1.EnvVar `json:"env"`
 }
 
 // ApplicationStatus defines the observed state of Application
