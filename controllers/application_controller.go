@@ -86,7 +86,7 @@ func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, req ctrl.Request, ctx context.Context) {
 	deployment := &appsv1.Deployment{}
-	err := r.Get(ctx, client.ObjectKey{Name: req.Name, Namespace: req.Namespace}, deployment)
+	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, deployment)
 
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -94,8 +94,8 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, re
 			fmt.Println("Creating Deployment for Application", app.Spec)
 			deployment = &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      req.Name,
-					Namespace: req.Namespace,
+					Name:      app.Name,
+					Namespace: app.Namespace,
 					OwnerReferences: []metav1.OwnerReference{
 						*metav1.NewControllerRef(app, apiv1alpha1.GroupVersion.WithKind("Application")),
 					},
@@ -103,16 +103,16 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, re
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &app.Spec.Replicas,
 					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{"app": req.Name},
+						MatchLabels: map[string]string{"app": app.Name},
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{"app": req.Name},
+							Labels: map[string]string{"app": app.Name},
 						},
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
 								{
-									Name:  req.Name,
+									Name:  app.Name,
 									Image: app.Spec.Image,
 									Ports: []corev1.ContainerPort{
 										{
@@ -127,33 +127,33 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, re
 			}
 
 			if err := r.Create(ctx, deployment); err != nil {
-				log.Log.Error(err, "unable to create Deployment for Application", "Application.Namespace", req.Namespace, "Application.Name", req.Name)
+				log.Log.Error(err, "Unable to create Deployment for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
 			}
 		} else {
 			// Error occurred during getting the Deployment
-			log.Log.Error(err, "unable to get Deployment", "Deployment.Namespace", req.Namespace, "Deployment.Name", req.Name)
+			log.Log.Error(err, "Unable to get Deployment", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
 		}
 	} else {
 		// Deployment already exists, do nothing
-		log.Log.Info("Deployment already exists", "Deployment.Namespace", req.Namespace, "Deployment.Name", req.Name)
+		log.Log.Info("Deployment already exists", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
 	}
 }
 func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, req ctrl.Request, ctx context.Context) {
 	service := &corev1.Service{}
-	err := r.Get(ctx, client.ObjectKey{Name: req.Name, Namespace: req.Namespace}, service)
+	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, service)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Service not found, creating a new one
 			service := &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      req.Name,
-					Namespace: req.Namespace,
+					Name:      app.Name,
+					Namespace: app.Namespace,
 					OwnerReferences: []metav1.OwnerReference{
 						*metav1.NewControllerRef(app, apiv1alpha1.GroupVersion.WithKind("Application")),
 					},
 				},
 				Spec: corev1.ServiceSpec{
-					Selector: map[string]string{"app": req.Name},
+					Selector: map[string]string{"app": app.Name},
 					Ports: []corev1.ServicePort{
 						{
 							Port:       app.Spec.Port,
@@ -165,7 +165,7 @@ func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, req c
 			}
 
 			if err := r.Create(ctx, service); err != nil {
-				log.Log.Error(err, "unable to create Service for Application", "Application.Namespace", req.Namespace, "Application.Name", req.Name)
+				log.Log.Error(err, "Unable to create Service for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
 			}
 		}
 	}
