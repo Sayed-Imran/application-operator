@@ -20,4 +20,12 @@ resources:
   kind: Application
   path: github.com/Sayed-Imran/application-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: app.op
+  group: api
+  kind: Application
+  path: github.com/Sayed-Imran/application-operator/api/v1alpha2
+  version: v1alpha2
 version: "3"
