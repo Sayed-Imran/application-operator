@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,16 +30,21 @@ type ApplicationSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Application. Edit application_types.go to remove/update
-	Replicas int32  `json:"replicas"`
-	Image    string `json:"image"`
-	Port     int32  `json:"port"`
-	Path     string `json:"path,omitempty"`
+	Replicas int32           `json:"replicas"`
+	Image    string          `json:"image"`
+	Port     int32           `json:"port"`
+	Env      []corev1.EnvVar `json:"env,omitempty"`
+	Path     string          `json:"path,omitempty"`
 }
 
 // ApplicationStatus defines the observed state of Application
 type ApplicationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Replicas int32  `json:"replicas"`
+	Image    string `json:"image"`
+	Port     int32  `json:"port"`
+	Path     string `json:"path,omitempty"`
 }
 
 //+kubebuilder:object:root=true
