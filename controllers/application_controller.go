@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	apiv1alpha1 "github.com/Sayed-Imran/application-operator/api/v1alpha1"
+	apiv1alpha2 "github.com/Sayed-Imran/application-operator/api/v1alpha2"
 )
 
 var logger = log.Log.WithName("controller_application")
@@ -59,7 +59,7 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	log := logger.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	log.Info("Reconciling Application")
-	app := &apiv1alpha1.Application{}
+	app := &apiv1alpha2.Application{}
 	err := r.Get(ctx, req.NamespacedName, app)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -79,11 +79,11 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&apiv1alpha1.Application{}).
+		For(&apiv1alpha2.Application{}).
 		Complete(r)
 }
 
-func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
+func createDeployment(app *apiv1alpha2.Application, r *ApplicationReconciler, ctx context.Context) {
 	deployment := &appsv1.Deployment{}
 	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, deployment)
 
@@ -95,7 +95,7 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ct
 					Name:      app.Name,
 					Namespace: app.Namespace,
 					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(app, apiv1alpha1.GroupVersion.WithKind("Application")),
+						*metav1.NewControllerRef(app, apiv1alpha2.GroupVersion.WithKind("Application")),
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -137,7 +137,7 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ct
 		log.Log.Info("Deployment already exists", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
 	}
 }
-func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
+func createService(app *apiv1alpha2.Application, r *ApplicationReconciler, ctx context.Context) {
 	service := &corev1.Service{}
 	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, service)
 	if err != nil {
@@ -148,7 +148,7 @@ func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx c
 					Name:      app.Name,
 					Namespace: app.Namespace,
 					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(app, apiv1alpha1.GroupVersion.WithKind("Application")),
+						*metav1.NewControllerRef(app, apiv1alpha2.GroupVersion.WithKind("Application")),
 					},
 				},
 				Spec: corev1.ServiceSpec{
