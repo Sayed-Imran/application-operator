@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	apiv1alpha2 "github.com/Sayed-Imran/application-operator/api/v1alpha2"
+	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	networkingv1alpha3 "istio.io/api/networking/v1alpha3"
 )
 
 var logger = log.Log.WithName("controller_application")
@@ -168,4 +170,54 @@ func createService(app *apiv1alpha2.Application, r *ApplicationReconciler, ctx c
 			}
 		}
 	}
+}
+
+func createVirtualService(app *apiv1alpha2.Application, r *ApplicationReconciler, ctx context.Context) {
+    virtualService := &istiov1alpha3.VirtualService{}
+    err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, virtualService)
+    if err != nil {
+        if errors.IsNotFound(err) {
+            // VirtualService not found, creating a new one
+            virtualService := &istiov1alpha3.VirtualService{
+                ObjectMeta: metav1.ObjectMeta{
+                    Name:      app.Name,
+                    Namespace: app.Namespace,
+                    OwnerReferences: []metav1.OwnerReference{
+                        *metav1.NewControllerRef(app, apiv1alpha2.GroupVersion.WithKind("Application")),
+                    },
+                },
+                Spec: networkingv1alpha3.VirtualService{
+                    Hosts:    []string{"*"},
+                    Gateways: []string{"app-gateway"},
+                    Http: []*networkingv1alpha3.HTTPRoute{
+                        {
+                            Match: []*networkingv1alpha3.HTTPMatchRequest{
+                                {
+                                    Uri: &networkingv1alpha3.StringMatch{
+                                        MatchType: &networkingv1alpha3.StringMatch_Prefix{
+                                            Prefix: app.Spec.Path,
+                                        },
+                                    },
+                                },
+                            },
+                            Route: []*networkingv1alpha3.HTTPRouteDestination{
+                                {
+                                    Destination: &networkingv1alpha3.Destination{
+                                        Host: app.Name,
+                                        Port: &networkingv1alpha3.PortSelector{
+                                            Number: uint32(app.Spec.Port),
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+
+            if err := r.Create(ctx, virtualService); err != nil {
+                log.Log.Error(err, "unable to create VirtualService for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
+            }
+        }
+    }
 }
