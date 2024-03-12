@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/onsi/ginkgo/v2 v2.9.4
 	github.com/onsi/gomega v1.27.6
+	istio.io/api v1.20.2-0.20231213020515-8655fab91d5d
 	istio.io/client-go v1.20.2
 	k8s.io/api v0.28.2
 	k8s.io/apimachinery v0.28.2
@@ -65,7 +66,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	istio.io/api v1.20.2-0.20231213020515-8655fab91d5d // indirect
 	k8s.io/apiextensions-apiserver v0.26.1 // indirect
 	k8s.io/component-base v0.26.1 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
