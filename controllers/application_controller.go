@@ -136,44 +136,58 @@ func createDeployment(app *apiv1alpha1.Application, r *ApplicationReconciler, ct
 		// Deployment already exists, do nothing
 		if !reflect.DeepEqual(deployment.Spec, desiredDeployment.Spec) {
 			// Update the deployment
+			log.Log.Info("Updating Deployment", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
 			deployment.Spec = desiredDeployment.Spec
 			if err := r.Update(ctx, deployment); err != nil {
 				log.Log.Error(err, "Unable to update Deployment", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
 			}
-
+			
+		} else {
+			log.Log.Info("Deployment already exists", "Deployment.Namespace", app.Namespace, "Deployment.Name", app.Name)
 		}
 	}
 }
 
 func createService(app *apiv1alpha1.Application, r *ApplicationReconciler, ctx context.Context) {
+	desiredService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      app.Name,
+			Namespace: app.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(app, apiv1alpha1.GroupVersion.WithKind("Application")),
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{"app": app.Name},
+			Ports: []corev1.ServicePort{
+				{
+					Port:       app.Spec.Port,
+					Protocol:   corev1.ProtocolTCP,
+					TargetPort: intstr.FromInt(int(app.Spec.Port)),
+				},
+			},
+		},
+	}
 	service := &corev1.Service{}
 	err := r.Get(ctx, client.ObjectKey{Name: app.Name, Namespace: app.Namespace}, service)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Service not found, creating a new one
-			service := &corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      app.Name,
-					Namespace: app.Namespace,
-					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(app, apiv1alpha1.GroupVersion.WithKind("Application")),
-					},
-				},
-				Spec: corev1.ServiceSpec{
-					Selector: map[string]string{"app": app.Name},
-					Ports: []corev1.ServicePort{
-						{
-							Port:       app.Spec.Port,
-							Protocol:   corev1.ProtocolTCP,
-							TargetPort: intstr.FromInt(int(app.Spec.Port)),
-						},
-					},
-				},
-			}
-
 			if err := r.Create(ctx, service); err != nil {
 				log.Log.Error(err, "Unable to create Service for Application", "Application.Namespace", app.Namespace, "Application.Name", app.Name)
 			}
+		}
+	} else {
+		// Service already exists, do nothing
+		if !reflect.DeepEqual(service.Spec, desiredService.Spec) {
+			// Update the service
+			log.Log.Info("Updating Service", "Service.Namespace", app.Namespace, "Service.Name", app.Name)
+			service.Spec = desiredService.Spec
+			if err := r.Update(ctx, service); err != nil {
+				log.Log.Error(err, "Unable to update Service", "Service.Namespace", app.Namespace, "Service.Name", app.Name)
+			}
+		} else {
+			log.Log.Info("Service already exists", "Service.Namespace", app.Namespace, "Service.Name", app.Name)
 		}
 	}
 }
